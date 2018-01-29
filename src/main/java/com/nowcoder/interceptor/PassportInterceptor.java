@@ -51,6 +51,7 @@ public class PassportInterceptor implements HandlerInterceptor {
 
     @Override
     public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
+        //放入上下文进行渲染，变量名为user
         if(modelAndView !=null){
             modelAndView.addObject("user",hostHolder.getUser());
         }
