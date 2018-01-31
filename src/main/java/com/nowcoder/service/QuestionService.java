@@ -13,17 +13,10 @@ import java.util.List;
  */
 @Service
 public class QuestionService {
-//    @Autowired
-//    QuestionDAO questionDAO;
-//
-//    public List<Question> getLatestQuestions(int userId, int offset, int limit) {
-//        return questionDAO.selectLatestQuestions(userId, offset, limit);
-//    }
-
     @Autowired
     QuestionDAO questionDAO;
 
-    public List<Question> getLatestQuestions(int userId,int offset,int limit){
-        return questionDAO.selectLatestQuestions(userId,offset,limit);
+    public List<Question> getLatestQuestions(int userId, int offset, int limit) {
+        return questionDAO.selectLatestQuestions(userId, offset, limit);
     }
 }

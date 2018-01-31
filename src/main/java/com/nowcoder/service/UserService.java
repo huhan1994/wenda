@@ -1,12 +1,11 @@
 package com.nowcoder.service;
 
-import com.nowcoder.dao.LoginTicketDao;
+import com.nowcoder.dao.LoginTicketDAO;
 import com.nowcoder.dao.UserDAO;
 import com.nowcoder.model.LoginTicket;
 import com.nowcoder.model.User;
 import com.nowcoder.util.WendaUtil;
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.validator.Msg;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -24,76 +23,89 @@ public class UserService {
     private UserDAO userDAO;
 
     @Autowired
-    private LoginTicketDao loginTicketDao;
+    private LoginTicketDAO loginTicketDAO;
 
-    public Map<String ,String> register(String username,String password){
-        Map<String,String> map=new HashMap<String, String>();
-        if(StringUtils.isBlank(username)){
-            map.put("msg","用户名不能为空！");
+    public Map<String, Object> register(String username, String password) {
+        Map<String, Object> map = new HashMap<String, Object>();
+        if (StringUtils.isBlank(username)) {
+            map.put("msg", "用户名不能为空");
             return map;
         }
-        if(StringUtils.isBlank(password)){
-            map.put("msg","密码不能为空！");
+
+        if (StringUtils.isBlank(password)) {
+            map.put("msg", "密码不能为空");
             return map;
         }
-        User user=userDAO.selectByName(username);
-        if(user!=null){
-            map.put("msg","该用户名已被注册！");
+
+        User user = userDAO.selectByName(username);
+
+        if (user != null) {
+            map.put("msg", "用户名已经被注册");
             return map;
         }
-        user=new User();
+
+        // 密码强度
+        user = new User();
         user.setName(username);
-        user.setHeadUrl(String.format("http://images.nowcoder.com/head/%dt.png", new Random().nextInt(1000)));
-        user.setSalt(UUID.randomUUID().toString().substring(0,5));
+        user.setSalt(UUID.randomUUID().toString().substring(0, 5));
+        String head = String.format("http://images.nowcoder.com/head/%dt.png", new Random().nextInt(1000));
+        user.setHeadUrl(head);
         user.setPassword(WendaUtil.MD5(password+user.getSalt()));
         userDAO.addUser(user);
-        String ticket=addLoginTicket(user.getId());
-        map.put("ticket",ticket);
+
+        // 登陆
+        String ticket = addLoginTicket(user.getId());
+        map.put("ticket", ticket);
         return map;
     }
 
-    public Map<String,String> login(String username, String password){
-        Map<String,String> map=new HashMap<String, String>();
-        if(StringUtils.isBlank(username)){
-            map.put("msg","用户名不能为空！");
+
+    public Map<String, Object> login(String username, String password) {
+        Map<String, Object> map = new HashMap<String, Object>();
+        if (StringUtils.isBlank(username)) {
+            map.put("msg", "用户名不能为空");
             return map;
         }
-        if(StringUtils.isBlank(password)){
-            map.put("msg","密码不能为空！");
+
+        if (StringUtils.isBlank(password)) {
+            map.put("msg", "密码不能为空");
             return map;
         }
+
         User user = userDAO.selectByName(username);
-        if(user==null){
-            map.put("msg","该用户不存在！");
+
+        if (user == null) {
+            map.put("msg", "用户名不存在");
             return map;
         }
-        if(!WendaUtil.MD5(password+user.getSalt()).equals(user.getPassword())){
-            map.put("msg","密码错误！");
-            return  map;
+
+        if (!WendaUtil.MD5(password+user.getSalt()).equals(user.getPassword())) {
+            map.put("msg", "密码不正确");
+            return map;
         }
-        String ticket=addLoginTicket(user.getId());
-        map.put("ticket",ticket);
+
+        String ticket = addLoginTicket(user.getId());
+        map.put("ticket", ticket);
         return map;
     }
 
-
-    public String addLoginTicket(int userId){
-        LoginTicket loginTicket = new LoginTicket();
-        loginTicket.setUserId(userId);
-        Date now = new Date();
-        now.setTime(3600*24*100+now.getTime());
-        loginTicket.setExpired(now);
-        loginTicket.setStatus(0);
-        loginTicket.setTicket(UUID.randomUUID().toString().replace("-",""));
-        loginTicketDao.addTicket(loginTicket);
-        return loginTicket.getTicket();
+    private String addLoginTicket(int userId) {
+        LoginTicket ticket = new LoginTicket();
+        ticket.setUserId(userId);
+        Date date = new Date();
+        date.setTime(date.getTime() + 1000*3600*24);
+        ticket.setExpired(date);
+        ticket.setStatus(0);
+        ticket.setTicket(UUID.randomUUID().toString().replaceAll("-", ""));
+        loginTicketDAO.addTicket(ticket);
+        return ticket.getTicket();
     }
 
-    public void logout(String ticket){
-        loginTicketDao.updateStatus(ticket,1);
-    }
-
-    public User gerUser(int id){
+    public User getUser(int id) {
         return userDAO.selectById(id);
+    }
+
+    public void logout(String ticket) {
+        loginTicketDAO.updateStatus(ticket, 1);
     }
 }
